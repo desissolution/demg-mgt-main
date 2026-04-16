@@ -1,5 +1,6 @@
 # -------------------------------------------------------------------
-# 01 Continuous Integration - runs on merge requests
+# Step 1: Validate + Plan (runs automatically)
+# Review the plan output before approving apply
 # -------------------------------------------------------------------
 
 validate:
@@ -9,8 +10,6 @@ validate:
     - terraform fmt -check -recursive
     - terraform init -backend=false
     - terraform validate
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 .plan_template: &plan_template
   stage: plan
@@ -39,11 +38,10 @@ validate:
       - "${TF_ROOT}/.terraform"
       - "${TF_ROOT}/.terraform.lock.hcl"
     expire_in: 1 day
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 plan:dev:
   <<: *plan_template
+  needs: ["validate"]
   environment:
     name: dev
     action: prepare

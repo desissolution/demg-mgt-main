@@ -1,0 +1,53 @@
+# -------------------------------------------------------------------
+# Step 2: Apply (requires manual click after reviewing plan)
+# Click the play button on each environment to deploy
+# -------------------------------------------------------------------
+
+.apply_template: &apply_template
+  stage: apply
+  when: manual
+  allow_failure: false
+  script:
+    - cd "${TF_ROOT}"
+    - >
+      terraform init
+      -backend-config="storage_account_name=${BACKEND_AZURE_STORAGE_ACCOUNT_NAME}"
+      -backend-config="container_name=${BACKEND_CONTAINER}"
+      -backend-config="key=terraform.tfstate"
+      -backend-config="use_azuread_auth=true"
+      -backend-config="use_oidc=true"
+      -backend-config="client_id=${AZURE_CLIENT_ID}"
+      -backend-config="tenant_id=${AZURE_TENANT_ID}"
+      -backend-config="subscription_id=${AZURE_SUBSCRIPTION_ID}"
+      -backend-config="oidc_token=${GITLAB_OIDC_TOKEN}"
+    - terraform apply -input=false -auto-approve tfplan
+
+apply:dev:
+  <<: *apply_template
+  needs: ["plan:dev"]
+  environment:
+    name: dev
+  variables:
+    BACKEND_CONTAINER: "dev"
+    VAR_FILE_PATH: "./config/dev.tfvars"
+    TF_VAR_resource_group_name: "rg-demg-env-dev-westus2-001"
+
+apply:test:
+  <<: *apply_template
+  needs: ["plan:test", "apply:dev"]
+  environment:
+    name: test
+  variables:
+    BACKEND_CONTAINER: "test"
+    VAR_FILE_PATH: "./config/test.tfvars"
+    TF_VAR_resource_group_name: "rg-demg-env-test-westus2-001"
+
+apply:prod:
+  <<: *apply_template
+  needs: ["plan:prod", "apply:test"]
+  environment:
+    name: prod
+  variables:
+    BACKEND_CONTAINER: "prod"
+    VAR_FILE_PATH: "./config/prod.tfvars"
+    TF_VAR_resource_group_name: "rg-demg-env-prod-westus2-001"

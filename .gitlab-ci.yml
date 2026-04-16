@@ -1,6 +1,6 @@
 include:
-  - local: '.gitlab/ci/ci.yml'
-  - local: '.gitlab/ci/cd.yml'
+  - local: '.gitlab/ci/plan.yml'
+  - local: '.gitlab/ci/apply.yml'
 
 variables:
   TF_ROOT: "."
@@ -10,9 +10,7 @@ variables:
 
 workflow:
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_PIPELINE_SOURCE == "web"
-    - when: never
 
 default:
   image:
