@@ -1,14 +1,20 @@
 variables:
   TF_ROOT: "."
   BACKEND_AZURE_STORAGE_ACCOUNT_NAME: "stodemgmgtwus2001rqp"
+  AZURE_SUBSCRIPTION_ID: "f775e0e1-c710-47ae-9dee-f50a0e4a0c70"
+  AZURE_TENANT_ID: "873cfe26-04bd-4643-aba6-82b72b38bf4f"
 
 default:
   image: hashicorp/terraform:latest
+  id_tokens:
+    GITLAB_OIDC_TOKEN:
+      aud: https://gitlab.com
   before_script:
     - export ARM_CLIENT_ID="${AZURE_CLIENT_ID}"
-    - export ARM_CLIENT_SECRET="${AZURE_CLIENT_SECRET}"
     - export ARM_SUBSCRIPTION_ID="${AZURE_SUBSCRIPTION_ID}"
     - export ARM_TENANT_ID="${AZURE_TENANT_ID}"
+    - export ARM_USE_OIDC=true
+    - export ARM_OIDC_TOKEN="${GITLAB_OIDC_TOKEN}"
 
 stages:
   - validate
