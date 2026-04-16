@@ -62,6 +62,7 @@ cd:plan:dev:
   variables:
     BACKEND_CONTAINER: "dev"
     VAR_FILE_PATH: "./config/dev.tfvars"
+    TF_VAR_resource_group_name: "rg-demg-env-dev-westus2-001"
 
 cd:plan:test:
   <<: *cd_plan_template
@@ -72,6 +73,7 @@ cd:plan:test:
   variables:
     BACKEND_CONTAINER: "test"
     VAR_FILE_PATH: "./config/test.tfvars"
+    TF_VAR_resource_group_name: "rg-demg-env-test-westus2-001"
 
 cd:plan:prod:
   <<: *cd_plan_template
@@ -82,6 +84,7 @@ cd:plan:prod:
   variables:
     BACKEND_CONTAINER: "prod"
     VAR_FILE_PATH: "./config/prod.tfvars"
+    TF_VAR_resource_group_name: "rg-demg-env-prod-westus2-001"
 
 # --- Apply jobs ---
 apply:dev:
@@ -92,6 +95,7 @@ apply:dev:
   variables:
     BACKEND_CONTAINER: "dev"
     VAR_FILE_PATH: "./config/dev.tfvars"
+    TF_VAR_resource_group_name: "rg-demg-env-dev-westus2-001"
 
 apply:test:
   <<: *apply_template
@@ -101,6 +105,7 @@ apply:test:
   variables:
     BACKEND_CONTAINER: "test"
     VAR_FILE_PATH: "./config/test.tfvars"
+    TF_VAR_resource_group_name: "rg-demg-env-test-westus2-001"
 
 apply:prod:
   <<: *apply_template
@@ -110,4 +115,5 @@ apply:prod:
   variables:
     BACKEND_CONTAINER: "prod"
     VAR_FILE_PATH: "./config/prod.tfvars"
+    TF_VAR_resource_group_name: "rg-demg-env-prod-westus2-001"
   when: manual
