@@ -42,14 +42,16 @@ validate:
   stage: plan
   script:
     - cd "${TF_ROOT}"
-    - terraform init
-        -backend-config="storage_account_name=${BACKEND_AZURE_STORAGE_ACCOUNT_NAME}"
-        -backend-config="container_name=${BACKEND_CONTAINER}"
-        -backend-config="key=terraform.tfstate"
-    - terraform plan
-        -var-file="${VAR_FILE_PATH}"
-        -out=tfplan
-        -input=false
+    - >
+      terraform init
+      -backend-config="storage_account_name=${BACKEND_AZURE_STORAGE_ACCOUNT_NAME}"
+      -backend-config="container_name=${BACKEND_CONTAINER}"
+      -backend-config="key=terraform.tfstate"
+    - >
+      terraform plan
+      -var-file="${VAR_FILE_PATH}"
+      -out=tfplan
+      -input=false
     - terraform show tfplan
   artifacts:
     paths:
@@ -103,10 +105,11 @@ plan:prod:
   stage: apply
   script:
     - cd "${TF_ROOT}"
-    - terraform init
-        -backend-config="storage_account_name=${BACKEND_AZURE_STORAGE_ACCOUNT_NAME}"
-        -backend-config="container_name=${BACKEND_CONTAINER}"
-        -backend-config="key=terraform.tfstate"
+    - >
+      terraform init
+      -backend-config="storage_account_name=${BACKEND_AZURE_STORAGE_ACCOUNT_NAME}"
+      -backend-config="container_name=${BACKEND_CONTAINER}"
+      -backend-config="key=terraform.tfstate"
     - terraform apply -input=false -auto-approve tfplan
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
