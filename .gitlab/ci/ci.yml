@@ -1,0 +1,72 @@
+# -------------------------------------------------------------------
+# 01 Continuous Integration - runs on merge requests
+# -------------------------------------------------------------------
+
+validate:
+  stage: validate
+  script:
+    - cd "${TF_ROOT}"
+    - terraform fmt -check -recursive
+    - terraform init -backend=false
+    - terraform validate
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+.plan_template: &plan_template
+  stage: plan
+  script:
+    - cd "${TF_ROOT}"
+    - >
+      terraform init
+      -backend-config="storage_account_name=${BACKEND_AZURE_STORAGE_ACCOUNT_NAME}"
+      -backend-config="container_name=${BACKEND_CONTAINER}"
+      -backend-config="key=terraform.tfstate"
+      -backend-config="use_azuread_auth=true"
+      -backend-config="use_oidc=true"
+      -backend-config="client_id=${AZURE_CLIENT_ID}"
+      -backend-config="tenant_id=${AZURE_TENANT_ID}"
+      -backend-config="subscription_id=${AZURE_SUBSCRIPTION_ID}"
+      -backend-config="oidc_token=${GITLAB_OIDC_TOKEN}"
+    - >
+      terraform plan
+      -var-file="${VAR_FILE_PATH}"
+      -out=tfplan
+      -input=false
+    - terraform show tfplan
+  artifacts:
+    paths:
+      - "${TF_ROOT}/tfplan"
+      - "${TF_ROOT}/.terraform"
+      - "${TF_ROOT}/.terraform.lock.hcl"
+    expire_in: 1 day
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+plan:dev:
+  <<: *plan_template
+  environment:
+    name: dev
+    action: prepare
+  variables:
+    BACKEND_CONTAINER: "dev"
+    VAR_FILE_PATH: "./config/dev.tfvars"
+
+plan:test:
+  <<: *plan_template
+  needs: ["plan:dev"]
+  environment:
+    name: test
+    action: prepare
+  variables:
+    BACKEND_CONTAINER: "test"
+    VAR_FILE_PATH: "./config/test.tfvars"
+
+plan:prod:
+  <<: *plan_template
+  needs: ["plan:test"]
+  environment:
+    name: prod
+    action: prepare
+  variables:
+    BACKEND_CONTAINER: "prod"
+    VAR_FILE_PATH: "./config/prod.tfvars"
