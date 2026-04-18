@@ -1,0 +1,82 @@
+# -------------------------------------------------------------------
+# Prod Environment: validate, plan, apply
+# -------------------------------------------------------------------
+
+validate:prod:
+  stage: validate
+  script:
+    - cd "${TF_ROOT}"
+    - terraform fmt -check -recursive
+    - terraform init -backend=false
+    - terraform validate
+  rules:
+    - if: $ENVIRONMENT == "prod" || $ENVIRONMENT == "all"
+
+plan:prod:
+  stage: plan
+  needs: ["validate:prod"]
+  environment:
+    name: prod
+    action: prepare
+  variables:
+    BACKEND_CONTAINER: "prod"
+    VAR_FILE_PATH: "./config/prod.tfvars"
+    TF_VAR_resource_group_name: "rg-demg-env-prod-westus2-001"
+    AZURE_CLIENT_ID: "66267ba5-e51c-4d64-b6ed-614bdfa9106b"
+  script:
+    - cd "${TF_ROOT}"
+    - >
+      terraform init
+      -backend-config="storage_account_name=${BACKEND_AZURE_STORAGE_ACCOUNT_NAME}"
+      -backend-config="container_name=${BACKEND_CONTAINER}"
+      -backend-config="key=terraform.tfstate"
+      -backend-config="use_azuread_auth=true"
+      -backend-config="use_oidc=true"
+      -backend-config="client_id=${AZURE_CLIENT_ID}"
+      -backend-config="tenant_id=${AZURE_TENANT_ID}"
+      -backend-config="subscription_id=${AZURE_SUBSCRIPTION_ID}"
+      -backend-config="oidc_token=${GITLAB_OIDC_TOKEN}"
+    - >
+      terraform plan
+      -var-file="${VAR_FILE_PATH}"
+      -out=tfplan
+      -input=false
+    - terraform show tfplan
+  artifacts:
+    paths:
+      - "${TF_ROOT}/tfplan"
+      - "${TF_ROOT}/.terraform"
+      - "${TF_ROOT}/.terraform.lock.hcl"
+    expire_in: 1 day
+  rules:
+    - if: $ENVIRONMENT == "prod" || $ENVIRONMENT == "all"
+
+apply:prod:
+  stage: apply
+  when: manual
+  allow_failure: false
+  needs: ["plan:prod"]
+  environment:
+    name: prod
+  variables:
+    BACKEND_CONTAINER: "prod"
+    VAR_FILE_PATH: "./config/prod.tfvars"
+    TF_VAR_resource_group_name: "rg-demg-env-prod-westus2-001"
+    AZURE_CLIENT_ID: "fcf64096-fbd3-4311-8eb2-4f038878ec68"
+  script:
+    - cd "${TF_ROOT}"
+    - >
+      terraform init -reconfigure
+      -backend-config="storage_account_name=${BACKEND_AZURE_STORAGE_ACCOUNT_NAME}"
+      -backend-config="container_name=${BACKEND_CONTAINER}"
+      -backend-config="key=terraform.tfstate"
+      -backend-config="use_azuread_auth=true"
+      -backend-config="use_oidc=true"
+      -backend-config="client_id=${AZURE_CLIENT_ID}"
+      -backend-config="tenant_id=${AZURE_TENANT_ID}"
+      -backend-config="subscription_id=${AZURE_SUBSCRIPTION_ID}"
+      -backend-config="oidc_token=${GITLAB_OIDC_TOKEN}"
+    - terraform apply -input=false -auto-approve tfplan
+  rules:
+    - if: $ENVIRONMENT == "prod" || $ENVIRONMENT == "all"
+      when: manual

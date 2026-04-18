@@ -1,12 +1,21 @@
 include:
-  - local: '.gitlab/ci/plan.yml'
-  - local: '.gitlab/ci/apply.yml'
+  - local: '.gitlab/ci/dev.yml'
+  - local: '.gitlab/ci/test.yml'
+  - local: '.gitlab/ci/prod.yml'
 
 variables:
   TF_ROOT: "."
   BACKEND_AZURE_STORAGE_ACCOUNT_NAME: "stodemgmgtwus2001rqp"
   AZURE_SUBSCRIPTION_ID: "f775e0e1-c710-47ae-9dee-f50a0e4a0c70"
   AZURE_TENANT_ID: "873cfe26-04bd-4643-aba6-82b72b38bf4f"
+  ENVIRONMENT:
+    description: "Choose environment to deploy"
+    value: "dev"
+    options:
+      - "dev"
+      - "test"
+      - "prod"
+      - "all"
 
 workflow:
   rules:
