@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------
-# Dev Environment: validate, plan, apply
+# Dev Environment
 # -------------------------------------------------------------------
 
 validate:dev:
@@ -16,13 +16,11 @@ plan:dev:
   stage: plan
   needs: ["validate:dev"]
   environment:
-    name: dev
+    name: dev-plan
     action: prepare
   variables:
     BACKEND_CONTAINER: "dev"
     VAR_FILE_PATH: "./config/dev.tfvars"
-    TF_VAR_resource_group_name: "rg-demg-env-dev-westus2-001"
-    AZURE_CLIENT_ID: "dd1177b1-f768-4455-8a52-b2688de5fd04"
   script:
     - cd "${TF_ROOT}"
     - >
@@ -61,8 +59,6 @@ apply:dev:
   variables:
     BACKEND_CONTAINER: "dev"
     VAR_FILE_PATH: "./config/dev.tfvars"
-    TF_VAR_resource_group_name: "rg-demg-env-dev-westus2-001"
-    AZURE_CLIENT_ID: "b4dc17c3-3118-49c6-8102-b8e776e06e37"
   script:
     - cd "${TF_ROOT}"
     - >

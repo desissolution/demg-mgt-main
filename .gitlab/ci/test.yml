@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------
-# Test Environment: validate, plan, apply
+# Test Environment
 # -------------------------------------------------------------------
 
 validate:test:
@@ -16,13 +16,11 @@ plan:test:
   stage: plan
   needs: ["validate:test"]
   environment:
-    name: test
+    name: test-plan
     action: prepare
   variables:
     BACKEND_CONTAINER: "test"
     VAR_FILE_PATH: "./config/test.tfvars"
-    TF_VAR_resource_group_name: "rg-demg-env-test-westus2-001"
-    AZURE_CLIENT_ID: "75543236-650e-4dba-9e64-67117394d02b"
   script:
     - cd "${TF_ROOT}"
     - >
@@ -61,8 +59,6 @@ apply:test:
   variables:
     BACKEND_CONTAINER: "test"
     VAR_FILE_PATH: "./config/test.tfvars"
-    TF_VAR_resource_group_name: "rg-demg-env-test-westus2-001"
-    AZURE_CLIENT_ID: "2846b33d-5f72-4fb8-ad55-807a68bb5832"
   script:
     - cd "${TF_ROOT}"
     - >

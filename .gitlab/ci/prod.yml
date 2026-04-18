@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------
-# Prod Environment: validate, plan, apply
+# Prod Environment
 # -------------------------------------------------------------------
 
 validate:prod:
@@ -16,13 +16,11 @@ plan:prod:
   stage: plan
   needs: ["validate:prod"]
   environment:
-    name: prod
+    name: prod-plan
     action: prepare
   variables:
     BACKEND_CONTAINER: "prod"
     VAR_FILE_PATH: "./config/prod.tfvars"
-    TF_VAR_resource_group_name: "rg-demg-env-prod-westus2-001"
-    AZURE_CLIENT_ID: "66267ba5-e51c-4d64-b6ed-614bdfa9106b"
   script:
     - cd "${TF_ROOT}"
     - >
@@ -61,8 +59,6 @@ apply:prod:
   variables:
     BACKEND_CONTAINER: "prod"
     VAR_FILE_PATH: "./config/prod.tfvars"
-    TF_VAR_resource_group_name: "rg-demg-env-prod-westus2-001"
-    AZURE_CLIENT_ID: "fcf64096-fbd3-4311-8eb2-4f038878ec68"
   script:
     - cd "${TF_ROOT}"
     - >
