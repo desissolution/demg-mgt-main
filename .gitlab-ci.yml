@@ -26,6 +26,7 @@ variables:
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "main"
 
 default:
   image:
