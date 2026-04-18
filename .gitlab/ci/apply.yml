@@ -31,6 +31,7 @@ apply:dev:
     BACKEND_CONTAINER: "dev"
     VAR_FILE_PATH: "./config/dev.tfvars"
     TF_VAR_resource_group_name: "rg-demg-env-dev-westus2-001"
+    AZURE_CLIENT_ID: "b4dc17c3-3118-49c6-8102-b8e776e06e37"
 
 apply:test:
   <<: *apply_template
@@ -41,6 +42,7 @@ apply:test:
     BACKEND_CONTAINER: "test"
     VAR_FILE_PATH: "./config/test.tfvars"
     TF_VAR_resource_group_name: "rg-demg-env-test-westus2-001"
+    AZURE_CLIENT_ID: "2846b33d-5f72-4fb8-ad55-807a68bb5832"
 
 apply:prod:
   <<: *apply_template
@@ -51,3 +53,4 @@ apply:prod:
     BACKEND_CONTAINER: "prod"
     VAR_FILE_PATH: "./config/prod.tfvars"
     TF_VAR_resource_group_name: "rg-demg-env-prod-westus2-001"
+    AZURE_CLIENT_ID: "fcf64096-fbd3-4311-8eb2-4f038878ec68"
