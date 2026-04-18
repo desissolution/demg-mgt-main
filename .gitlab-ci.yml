@@ -1,8 +1,31 @@
+spec:
+  inputs:
+    environment:
+      description: "Choose environment to deploy"
+      type: string
+      default: "dev"
+      options:
+        - "dev"
+        - "test"
+        - "prod"
+        - "all"
+---
+
+include:
+  - local: '.gitlab/ci/dev.yml'
+  - local: '.gitlab/ci/test.yml'
+  - local: '.gitlab/ci/prod.yml'
+
 variables:
   TF_ROOT: "."
   BACKEND_AZURE_STORAGE_ACCOUNT_NAME: "stodemgmgtwus2001rqp"
   AZURE_SUBSCRIPTION_ID: "f775e0e1-c710-47ae-9dee-f50a0e4a0c70"
   AZURE_TENANT_ID: "873cfe26-04bd-4643-aba6-82b72b38bf4f"
+  ENVIRONMENT: $[[ inputs.environment ]]
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
 
 default:
   image:
@@ -24,137 +47,3 @@ stages:
   - validate
   - plan
   - apply
-
-# -------------------------------------------------------------------
-# CI: Validate (runs on merge requests)
-# -------------------------------------------------------------------
-validate:
-  stage: validate
-  script:
-    - cd "${TF_ROOT}"
-    - terraform fmt -check -recursive
-    - terraform init -backend=false
-    - terraform validate
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
-# -------------------------------------------------------------------
-# CI: Plan per environment (runs on merge requests)
-# -------------------------------------------------------------------
-.plan_template: &plan_template
-  stage: plan
-  script:
-    - cd "${TF_ROOT}"
-    - >
-      terraform init
-      -backend-config="storage_account_name=${BACKEND_AZURE_STORAGE_ACCOUNT_NAME}"
-      -backend-config="container_name=${BACKEND_CONTAINER}"
-      -backend-config="key=terraform.tfstate"
-      -backend-config="use_azuread_auth=true"
-      -backend-config="use_oidc=true"
-      -backend-config="client_id=${AZURE_CLIENT_ID}"
-      -backend-config="tenant_id=${AZURE_TENANT_ID}"
-      -backend-config="subscription_id=${AZURE_SUBSCRIPTION_ID}"
-      -backend-config="oidc_token=${GITLAB_OIDC_TOKEN}"
-    - >
-      terraform plan
-      -var-file="${VAR_FILE_PATH}"
-      -out=tfplan
-      -input=false
-    - terraform show tfplan
-  artifacts:
-    paths:
-      - "${TF_ROOT}/tfplan"
-      - "${TF_ROOT}/.terraform"
-      - "${TF_ROOT}/.terraform.lock.hcl"
-    expire_in: 1 day
-
-plan:dev:
-  <<: *plan_template
-  environment:
-    name: dev
-    action: prepare
-  variables:
-    BACKEND_CONTAINER: "dev"
-    VAR_FILE_PATH: "./config/dev.tfvars"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
-plan:test:
-  <<: *plan_template
-  needs: ["plan:dev"]
-  environment:
-    name: test
-    action: prepare
-  variables:
-    BACKEND_CONTAINER: "test"
-    VAR_FILE_PATH: "./config/test.tfvars"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
-plan:prod:
-  <<: *plan_template
-  needs: ["plan:test"]
-  environment:
-    name: prod
-    action: prepare
-  variables:
-    BACKEND_CONTAINER: "prod"
-    VAR_FILE_PATH: "./config/prod.tfvars"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
-# -------------------------------------------------------------------
-# CD: Apply per environment (runs on merge to main only)
-# -------------------------------------------------------------------
-.apply_template: &apply_template
-  stage: apply
-  script:
-    - cd "${TF_ROOT}"
-    - >
-      terraform init
-      -backend-config="storage_account_name=${BACKEND_AZURE_STORAGE_ACCOUNT_NAME}"
-      -backend-config="container_name=${BACKEND_CONTAINER}"
-      -backend-config="key=terraform.tfstate"
-      -backend-config="use_azuread_auth=true"
-      -backend-config="use_oidc=true"
-      -backend-config="client_id=${AZURE_CLIENT_ID}"
-      -backend-config="tenant_id=${AZURE_TENANT_ID}"
-      -backend-config="subscription_id=${AZURE_SUBSCRIPTION_ID}"
-      -backend-config="oidc_token=${GITLAB_OIDC_TOKEN}"
-    - terraform apply -input=false -auto-approve tfplan
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: on_success
-
-apply:dev:
-  <<: *apply_template
-  needs: ["plan:dev"]
-  environment:
-    name: dev
-  variables:
-    BACKEND_CONTAINER: "dev"
-    VAR_FILE_PATH: "./config/dev.tfvars"
-
-apply:test:
-  <<: *apply_template
-  needs: ["plan:test", "apply:dev"]
-  environment:
-    name: test
-  variables:
-    BACKEND_CONTAINER: "test"
-    VAR_FILE_PATH: "./config/test.tfvars"
-
-apply:prod:
-  <<: *apply_template
-  needs: ["plan:prod", "apply:test"]
-  environment:
-    name: prod
-  variables:
-    BACKEND_CONTAINER: "prod"
-    VAR_FILE_PATH: "./config/prod.tfvars"
-  when: manual  # Requires manual approval for production

@@ -1,0 +1,78 @@
+# -------------------------------------------------------------------
+# Dev Environment
+# -------------------------------------------------------------------
+
+validate:dev:
+  stage: validate
+  script:
+    - cd "${TF_ROOT}"
+    - terraform fmt -check -recursive
+    - terraform init -backend=false
+    - terraform validate
+  rules:
+    - if: $ENVIRONMENT == "dev" || $ENVIRONMENT == "all"
+
+plan:dev:
+  stage: plan
+  needs: ["validate:dev"]
+  environment:
+    name: dev-plan
+    action: prepare
+  variables:
+    BACKEND_CONTAINER: "dev"
+    VAR_FILE_PATH: "./config/dev.tfvars"
+  script:
+    - cd "${TF_ROOT}"
+    - >
+      terraform init
+      -backend-config="storage_account_name=${BACKEND_AZURE_STORAGE_ACCOUNT_NAME}"
+      -backend-config="container_name=${BACKEND_CONTAINER}"
+      -backend-config="key=terraform.tfstate"
+      -backend-config="use_azuread_auth=true"
+      -backend-config="use_oidc=true"
+      -backend-config="client_id=${AZURE_CLIENT_ID}"
+      -backend-config="tenant_id=${AZURE_TENANT_ID}"
+      -backend-config="subscription_id=${AZURE_SUBSCRIPTION_ID}"
+      -backend-config="oidc_token=${GITLAB_OIDC_TOKEN}"
+    - >
+      terraform plan
+      -var-file="${VAR_FILE_PATH}"
+      -out=tfplan
+      -input=false
+    - terraform show tfplan
+  artifacts:
+    paths:
+      - "${TF_ROOT}/tfplan"
+      - "${TF_ROOT}/.terraform"
+      - "${TF_ROOT}/.terraform.lock.hcl"
+    expire_in: 1 day
+  rules:
+    - if: $ENVIRONMENT == "dev" || $ENVIRONMENT == "all"
+
+apply:dev:
+  stage: apply
+  when: manual
+  allow_failure: false
+  needs: ["plan:dev"]
+  environment:
+    name: dev-apply
+  variables:
+    BACKEND_CONTAINER: "dev"
+    VAR_FILE_PATH: "./config/dev.tfvars"
+  script:
+    - cd "${TF_ROOT}"
+    - >
+      terraform init -reconfigure
+      -backend-config="storage_account_name=${BACKEND_AZURE_STORAGE_ACCOUNT_NAME}"
+      -backend-config="container_name=${BACKEND_CONTAINER}"
+      -backend-config="key=terraform.tfstate"
+      -backend-config="use_azuread_auth=true"
+      -backend-config="use_oidc=true"
+      -backend-config="client_id=${AZURE_CLIENT_ID}"
+      -backend-config="tenant_id=${AZURE_TENANT_ID}"
+      -backend-config="subscription_id=${AZURE_SUBSCRIPTION_ID}"
+      -backend-config="oidc_token=${GITLAB_OIDC_TOKEN}"
+    - terraform apply -input=false -auto-approve tfplan
+  rules:
+    - if: $ENVIRONMENT == "dev" || $ENVIRONMENT == "all"
+      when: manual
