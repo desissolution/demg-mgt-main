@@ -55,7 +55,7 @@ apply:prod:
   allow_failure: false
   needs: ["plan:prod"]
   environment:
-    name: prod
+    name: prod-apply
   variables:
     BACKEND_CONTAINER: "prod"
     VAR_FILE_PATH: "./config/prod.tfvars"

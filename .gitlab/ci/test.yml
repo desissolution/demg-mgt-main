@@ -55,7 +55,7 @@ apply:test:
   allow_failure: false
   needs: ["plan:test"]
   environment:
-    name: test
+    name: test-apply
   variables:
     BACKEND_CONTAINER: "test"
     VAR_FILE_PATH: "./config/test.tfvars"

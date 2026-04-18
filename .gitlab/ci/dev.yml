@@ -55,7 +55,7 @@ apply:dev:
   allow_failure: false
   needs: ["plan:dev"]
   environment:
-    name: dev
+    name: dev-apply
   variables:
     BACKEND_CONTAINER: "dev"
     VAR_FILE_PATH: "./config/dev.tfvars"
